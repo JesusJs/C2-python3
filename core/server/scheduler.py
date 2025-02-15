@@ -1,5 +1,8 @@
-import threading
+import sys
+import os
 import asyncio
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+sys.path.insert(0, project_root)
 from handleClient import HandleClient
 
 class Server:
@@ -19,13 +22,13 @@ class Server:
     async def server_admin_interface(self):
         while True:
             command = await asyncio.to_thread(input, "Comando del servidor (SEND <session_id>): ")
-            if command.startswith("SEND"):
+            if command.lower().startswith("send"):
                 parts = command.split(maxsplit=2)
-                if len(parts) < 3:
-                    print("Formato: SEND <session_id> <mensaje>")
+                if len(parts) < 2:
+                    print("Formato: SEND <session_id>")
                     continue
-                _, session_id, message = parts
-                await self.handler.access_session(session_id, message)
+                _, session_id = parts
+                await self.handler.access_session(session_id, "HOLAMUNDO")
 
 if __name__ == "__main__":
     asyncio.run(Server().start_server())
