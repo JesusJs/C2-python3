@@ -29,6 +29,8 @@ class Crocodile:
                 print("Respuesta recibida:", resp.decode("utf-8", errors="replace"))
             except Exception as e:
                 print("ocurrio un error", e)
+                if( str(e).find("El nombre de red especificado ya no está disponible")):
+                    break
         
     async def get_input(self,prompt: str):
         return await asyncio.to_thread(input, prompt)

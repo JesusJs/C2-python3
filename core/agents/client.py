@@ -30,6 +30,8 @@ class AsyncClient:
                     
                     writer.write(current_dir.encode('utf-8'))
                     await writer.drain()  # Enviar los datos
+                else:
+                     writer.write(b"Comando incorrecto.")
 
             except (asyncio.IncompleteReadError, ConnectionResetError, BrokenPipeError):
                             print("Cliente desconectado de forma inesperada.")
