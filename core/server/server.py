@@ -26,7 +26,7 @@ class Server:
             if command.startswith("send"):
                 parts = command.split(maxsplit=2)
                 if len(parts) < 2:
-                    print("Formato: SEND <session_id>")
+                    print("SEND <session_id>")
                     continue
                 _, session_id = parts
                 await self.handler.access_session(session_id, "CONNECTED")

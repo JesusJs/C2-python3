@@ -15,7 +15,7 @@ class HandleClient:
         
         async with self.lock:
             self.sessions[session_id] = {"reader": reader, "writer": writer, "address": addr}     
-        print(f"🎮 Nueva sesión [{session_id}] desde {addr}")
+        print(f"🎮 Nueva sesión [{session_id}] desde {addr} :")
 
     async def access_session(self, session_id, message):
         async with self.lock:
