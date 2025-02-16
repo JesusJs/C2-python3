@@ -38,7 +38,6 @@ class AsyncClient:
                 print(f"Error en el shell: {e}")
                 break  
 
-
 if __name__ == "__main__":
     client = AsyncClient()
     asyncio.run(client.connect())
