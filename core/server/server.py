@@ -11,6 +11,7 @@ class Server:
         self.handler = HandleClient(self.sessions)
 
     async def start_server(self, host='127.0.0.1', port=65432):
+        
         server = await asyncio.start_server(self.handler.handle_client, host, port)
         print(f"🟢 Servidor iniciado en {host}:{port}")
         
@@ -22,13 +23,13 @@ class Server:
     async def server_admin_interface(self):
         while True:
             command = await asyncio.to_thread(input, "Comando del servidor (SEND <session_id>): ")
-            if command.lower().startswith("send"):
+            if command.startswith("send"):
                 parts = command.split(maxsplit=2)
                 if len(parts) < 2:
                     print("Formato: SEND <session_id>")
                     continue
                 _, session_id = parts
-                await self.handler.access_session(session_id, "HOLAMUNDO")
+                await self.handler.access_session(session_id, "CONNECTED")
 
 if __name__ == "__main__":
     asyncio.run(Server().start_server())
