@@ -19,19 +19,16 @@ class Crocodile:
         while True:
             try: 
                 if isinstance(current_dir, bytes):
-                    command = await self.get_input(current_dir.decode() + '#:')
+                    command = await self.get_input(current_dir.decode() + ' #:')
                 elif isinstance(current_dir, str):
-                    command = await self.get_input(current_dir + '#:')
+                    command = await self.get_input(current_dir + ' #:')
                 else:
                     raise TypeError("current_dir debe ser de tipo bytes o str")
                 if command.lower() == "exit":
                     break
                 elif command.startswith("cd"):
-                    # writer.write(command.encode('utf-8'))
-                    # res = await reader.read(36)           
-                    # current_dir = res
-                    r = command.encode('utf-8')
-                    writer.write(r)
+                    res = command.encode('utf-8')
+                    writer.write(res)
                     resp = await reader.read(1024)
                     current_dir = resp.decode()
                     print(current_dir)
@@ -40,12 +37,15 @@ class Crocodile:
                     writer.write(res)
                     resp = await reader.read(1024)
                     current_dir = resp
+                    writer.write(b"pwd")
+                    resp2 = await reader.read(1024)
+                    current_dir = resp2
                     print(current_dir)
                 if not resp:
                     print("🔴 El cliente cerró la conexión.")
                     break
                     
-                print("Respuesta recibida:", resp.decode())
+                print(resp.decode())
             except Exception as e:
                 print("ocurrio un error", e)
                 if( str(e).find("El nombre de red especificado ya no está disponible")):
