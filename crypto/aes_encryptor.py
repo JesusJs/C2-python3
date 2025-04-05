@@ -3,6 +3,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 import os
 import asyncio
+import base64
 class AESEncryptor:
     def __init__(self, key: bytes):
         if len(key) not in [16, 24, 32]:
@@ -10,17 +11,35 @@ class AESEncryptor:
         self.key = key
 
     def encrypt(self, plaintext: str) -> bytes:
-        nonce = os.urandom(12)
-        cipher = Cipher(algorithms.AES(self.key), modes.GCM(nonce), backend=default_backend())
-        encryptor = cipher.encryptor()
-        ciphertext = encryptor.update(plaintext.encode()) + encryptor.finalize()
-        return nonce + encryptor.tag + ciphertext
+        try:
+            nonce = os.urandom(12)
+            cipher = Cipher(algorithms.AES(self.key), modes.GCM(nonce), backend=default_backend())
+            encryptor = cipher.encryptor()
+            ciphertext = encryptor.update(plaintext.encode()) + encryptor.finalize()
+            return nonce + encryptor.tag + ciphertext
+        except Exception as e:
+                print(e)
          
-    async def decrypt(self, data: str) -> str:
-        nonce, tag, ciphertext = data[:12], data[12:28], data[28:]
-        cipher = await Cipher(algorithms.AES(self.key), modes.GCM(nonce, tag), backend=default_backend())
-        decryptor = await cipher.decryptor()
-        fynalD = ""
-        if(decryptor):
-            fynalD = decryptor.update(ciphertext)
-        return fynalD
+    def decrypt(self, data: str) -> str:
+        try:
+            raw_data = data  # Decodifica el Base64
+            nonce, tag, ciphertext = raw_data[:12], raw_data[12:28], raw_data[28:]
+
+            cipher = Cipher(algorithms.AES(self.key), modes.GCM(nonce, tag), backend=default_backend())
+            decryptor = cipher.decryptor()
+            plaintext = decryptor.update(ciphertext) + decryptor.finalize()
+
+            return plaintext
+        except Exception as e:
+            print(f"Error en descifrado: {e}")
+            return None
+        
+    def encryptBytes(self, plaintext: str) -> bytes:
+        try:
+            nonce = os.urandom(12)
+            cipher = Cipher(algorithms.AES(self.key), modes.GCM(nonce), backend=default_backend())
+            encryptor = cipher.encryptor()
+            ciphertext = encryptor.update(plaintext) + encryptor.finalize()
+            return nonce + encryptor.tag + ciphertext
+        except Exception as e:
+                print(e)

