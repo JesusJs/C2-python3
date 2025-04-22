@@ -2,8 +2,6 @@
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 import os
-import asyncio
-import base64
 class AESEncryptor:
     def __init__(self, key: bytes):
         if len(key) not in [16, 24, 32]:
